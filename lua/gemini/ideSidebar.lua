@@ -196,6 +196,9 @@ end
 -- @param cmdOpts table Command options containing args for additional text
 -- @return nil
 function ideSidebar.sendSelectedText(cmdOpts)
+  -- Exit visual mode if we are in it, to ensure marks are updated and we are in normal mode
+  if vim.fn.mode():find('[vV\22]') then vim.cmd('normal! \27') end
+
   local text = cmdOpts.args or ''
   local selectedText = ''
 
@@ -653,11 +656,20 @@ function ideSidebar.setup(opts)
     termOpts.id =
       ideSidebar.createDeterministicId(termOpts.cmd, termOpts.env, idx)
 
-    if #opts.cmds > 1 then
-      -- Add default keymaps for switching between active sidebar terminals
-      -- Users can define their own on_buf function to override these keymaps
-      local onBuffer = termOpts.on_buf
-      termOpts.on_buf = function(buf)
+    ::continue::
+    if not termOpts then goto skip_terminal end
+
+    -- Add default keymaps for switching between active sidebar terminals
+    -- Users can define their own on_buf function to override these keymaps
+    local onBuffer = termOpts.on_buf
+    termOpts.on_buf = function(buf)
+      -- Auto enter insert mode when entering the buffer
+      vim.api.nvim_create_autocmd('BufEnter', {
+        buffer = buf,
+        command = 'startinsert',
+      })
+
+      if #opts.cmds > 1 then
         vim.api.nvim_buf_set_keymap(
           buf,
           't',
@@ -677,8 +689,8 @@ function ideSidebar.setup(opts)
       end
     end
 
-    ::continue::
-    if termOpts then table.insert(ideSidebarState.terminalOpts, termOpts) end
+    table.insert(ideSidebarState.terminalOpts, termOpts)
+    ::skip_terminal::
   end
 
   if #ideSidebarState.terminalOpts == 0 then
