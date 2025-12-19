@@ -656,11 +656,17 @@ function ideSidebar.setup(opts)
     termOpts.id =
       ideSidebar.createDeterministicId(termOpts.cmd, termOpts.env, idx)
 
-    if #opts.cmds > 1 then
-      -- Add default keymaps for switching between active sidebar terminals
-      -- Users can define their own on_buf function to override these keymaps
-      local onBuffer = termOpts.on_buf
-      termOpts.on_buf = function(buf)
+    -- Add default keymaps for switching between active sidebar terminals
+    -- Users can define their own on_buf function to override these keymaps
+    local onBuffer = termOpts.on_buf
+    termOpts.on_buf = function(buf)
+      -- Auto enter insert mode when entering the buffer
+      vim.api.nvim_create_autocmd('BufEnter', {
+        buffer = buf,
+        command = 'startinsert',
+      })
+
+      if #opts.cmds > 1 then
         vim.api.nvim_buf_set_keymap(
           buf,
           't',
