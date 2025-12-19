@@ -656,6 +656,9 @@ function ideSidebar.setup(opts)
     termOpts.id =
       ideSidebar.createDeterministicId(termOpts.cmd, termOpts.env, idx)
 
+    ::continue::
+    if not termOpts then goto skip_terminal end
+
     -- Add default keymaps for switching between active sidebar terminals
     -- Users can define their own on_buf function to override these keymaps
     local onBuffer = termOpts.on_buf
@@ -686,8 +689,8 @@ function ideSidebar.setup(opts)
       end
     end
 
-    ::continue::
-    if termOpts then table.insert(ideSidebarState.terminalOpts, termOpts) end
+    table.insert(ideSidebarState.terminalOpts, termOpts)
+    ::skip_terminal::
   end
 
   if #ideSidebarState.terminalOpts == 0 then
